@@ -54,7 +54,7 @@ VDA5050Connector::VDA5050Connector() : state(State()), order(Order()) {
 
   stateTimer = nh.createTimer(ros::Duration(3.0), std::bind(&VDA5050Connector::PublishState, this));
   visTimer =
-      nh.createTimer(ros::Duration(1.0), std::bind(&VDA5050Connector::PublishVisualization, this));
+      nh.createTimer(ros::Duration(0.5), std::bind(&VDA5050Connector::PublishVisualization, this));
   connTimer = nh.createTimer(
       ros::Duration(15.0), std::bind(&VDA5050Connector::PublishConnection, this, true));
   newPublishTrigger = true;
@@ -616,7 +616,7 @@ int main(int argc, char** argv) {
   VDA5050Connector VDA5050Connector;
 
   ros::Duration(2.0).sleep();
-  ros::Rate rate(0.5);
+  ros::Rate rate(10);
 
   while (ros::ok()) {
     VDA5050Connector.MonitorOrder();
