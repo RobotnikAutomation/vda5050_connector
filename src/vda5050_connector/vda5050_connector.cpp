@@ -52,11 +52,18 @@ VDA5050Connector::VDA5050Connector() : state(State()), order(Order()) {
   sent_factsheet_ = false;
   setFactsheet();
 
-  stateTimer = nh.createTimer(ros::Duration(3.0), std::bind(&VDA5050Connector::PublishState, this));
-  visTimer =
-      nh.createTimer(ros::Duration(0.5), std::bind(&VDA5050Connector::PublishVisualization, this));
+  ros::NodeHandle private_nh("~");
+  double stateMsgPeriod, visMsgPeriod, connMsgPeriod;
+  private_nh.param<double>("publish_periods/state_msg", stateMsgPeriod, 0.8);
+  private_nh.param<double>("publish_periods/visualization_msg", visMsgPeriod, 0.3);
+  private_nh.param<double>("publish_periods/conn_msg", connMsgPeriod, 15.0);
+
+  stateTimer = nh.createTimer(
+      ros::Duration(stateMsgPeriod), std::bind(&VDA5050Connector::PublishState, this));
+  visTimer = nh.createTimer(
+      ros::Duration(visMsgPeriod), std::bind(&VDA5050Connector::PublishVisualization, this));
   connTimer = nh.createTimer(
-      ros::Duration(15.0), std::bind(&VDA5050Connector::PublishConnection, this, true));
+      ros::Duration(connMsgPeriod), std::bind(&VDA5050Connector::PublishConnection, this, true));
   newPublishTrigger = true;
 }
 
@@ -524,17 +531,20 @@ void VDA5050Connector::PublishVisualization() {
 
 void VDA5050Connector::PublishConnection(const bool connected) {
   // Create new connection state message.
-  auto con = state.CreateConnectionMsg();
+  auto connection = state.CreateConnectionMsg();
 
   // Set the header fields.
-  con.headerId = connHeaderId;
-  con.timestamp = connector_utils::GetISOCurrentTimestamp();
+  connection.headerId = connHeaderId;
+  connection.timestamp = connector_utils::GetISOCurrentTimestamp();
+  connection.version = state.GetVersion();
+  connection.manufacturer = state.GetManufacturer();
+  connection.serialNumber = state.GetSerialNumber();
 
   // Set the connection state.
-  con.connectionState =
+  connection.connectionState =
       connected ? vda5050_msgs::Connection::ONLINE : vda5050_msgs::Connection::OFFLINE;
 
-  connectionPublisher.publish(con);
+  connectionPublisher.publish(connection);
 
   // Increase header count after each publish.
   connHeaderId++;
