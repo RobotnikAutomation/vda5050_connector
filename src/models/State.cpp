@@ -132,7 +132,7 @@ bool State::InDeviationRange(vda5050_msgs::Node node) {
     in_dev = (vehicle_to_node_dist <= node.nodePosition.allowedDeviationXY);
   } else {
     // TODO: default by parameter
-    in_dev = (vehicle_to_node_dist <= 0.5);
+    in_dev = (vehicle_to_node_dist <= 2.2);
   }
 
   it = find_if(factsheet.protocolFeatures.optionalParameters.begin(),
