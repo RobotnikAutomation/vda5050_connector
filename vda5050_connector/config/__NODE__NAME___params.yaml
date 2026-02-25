@@ -1,0 +1,5 @@
+---
+/**:
+  vda5050_connector:
+    ros__parameters:
+      dummy: true

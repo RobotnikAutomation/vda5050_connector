@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>vda5050_connector_plugins</name>
+  <version>0.0.1</version>
+	<author email="ros-developers@robotnik.es">Robotnik Automation</author>	
+  <description>The vda5050_connector_plugins package</description>
+
+	<!-- List of maintainers -->
+	<maintainer email="ros-developers@robotnik.es">Robotnik Developers</maintainer>
+  
+	<license>Proprietary Software License</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>pluginlib</depend>
+  <depend>vda5050_connector</depend>
+  <build_depend>rclcpp</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>vda5050_msgs</build_depend>
+  <export>
+    <build_type>ament_cmake</build_type>
+    <pluginlib plugin="${prefix}/share/vda5050_connector_plugins/vda5050_connector_pluginlib.xml"/>
+  </export>
+</package>

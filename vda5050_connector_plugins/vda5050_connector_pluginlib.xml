@@ -1,0 +1,5 @@
+<library path="vda5050_connector_plugins">
+    <class name="vda5050_connector_plugins/TestPlugin" type="connector_plugins::TestPlugin" base_class_type="connector_plugins::GenericPlugin">
+        <description>This is the Test plugin.</description>
+    </class>
+</library>
