@@ -2,4 +2,7 @@
     <class name="vda5050_connector_plugins/TestPlugin" type="connector_plugins::TestPlugin" base_class_type="connector_plugins::GenericPlugin">
         <description>This is the Test plugin.</description>
     </class>
+    <class name="vda5050_connector_plugins/VisualizationPlugin" type="connector_plugins::VisualizationPlugin" base_class_type="connector_plugins::GenericPlugin">
+        <description>This is the Visualization plugin.</description>
+    </class>
 </library>

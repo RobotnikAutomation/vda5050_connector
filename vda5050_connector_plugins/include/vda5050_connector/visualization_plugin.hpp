@@ -27,56 +27,34 @@
 // FOR ANY DAMAGES ARISING FROM THE USE OF THE SOFTWARE OR ITS INTEGRATION IN A
 // THIRD-PARTY SYSTEM.
 
-#include "vda5050_connector/subscription_manager.hpp"
+#pragma once
+#include <vda5050_connector/generic_plugin.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <vda5050_msgs/msg/visualization.hpp>
+#include <nav_msgs/msg/odometry.hpp>
+#include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
 
-SubscriptionManager::SubscriptionManager(rclcpp::Node::SharedPtr node)
-: node_(node)
+namespace connector_plugins
 {
-}
-
-SubscriptionManager::SubscriptionManager()
-: node_()
+class VisualizationPlugin : public GenericPlugin<vda5050_msgs::msg::Visualization>
 {
-}
+    using Visualization = vda5050_msgs::msg::Visualization;
+    public:
+        VisualizationPlugin() = default;
+        ~VisualizationPlugin() = default;
+        void init() override;
+        void update(Visualization& msg) override;
 
-void SubscriptionManager::init(rclcpp::Node::SharedPtr node)
-{
-	if (node_.expired())
-	{
-		node_ = node;
-	}
-}
+    private:
+        std::vector<SubscriptionFields> generateSubscriptionFields() override;
+        void odomCallback(SerializedMsgPtr msg);
+        void amclPoseCallback(SerializedMsgPtr msg);
+        
+        nav_msgs::msg::Odometry last_odometry_;
+        geometry_msgs::msg::PoseWithCovarianceStamped last_amcl_pose_;
+};
+    
+} // namespace connector_plugins
 
-void SubscriptionManager::registerSubscription(SubscriptionFields fields)
-{
-	auto callback = fields.callback;
-	std::string topic_name = fields.topic_name;
-	std::string topic_type = fields.topic_type;
-	auto wrapper = [callback](std::shared_ptr<void> msg) {
-		callback(std::static_pointer_cast<rclcpp::SerializedMessage>(msg));
-	};
-
-	auto it = topic_callbacks_.find(topic_name);
-	if (it != topic_callbacks_.end())
-	{
-		it->second.push_back(wrapper);
-	}
-	else
-	{
-		topic_callbacks_[topic_name] = {wrapper};
-		auto subscription = node_.lock()->create_generic_subscription(
-			topic_name,
-			topic_type,
-			rclcpp::QoS(10),
-			[this, topic_name](const std::shared_ptr<rclcpp::SerializedMessage> msg)
-			{
-				for (auto &cb : topic_callbacks_[topic_name])
-				{
-					cb(msg);
-				}
-			}
-		);
-
-		subscriptions_.push_back(subscription);
-	}
-}
+#include "pluginlib/class_list_macros.hpp"
+PLUGINLIB_EXPORT_CLASS(connector_plugins::VisualizationPlugin, connector_plugins::GenericPlugin<vda5050_msgs::msg::Visualization>)

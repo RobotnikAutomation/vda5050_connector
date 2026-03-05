@@ -31,12 +31,12 @@
 
 namespace connector_plugins
 {
-void TestPlugin::update(vda5050_msgs::msg::State& state)
+void TestPlugin::update(State& state)
 {
     std::vector<vda5050_msgs::msg::Error> errors;
     vda5050_msgs::msg::Error error, error2;
-    error.error_type = "Malo";
-    error2.error_type = "Malisimo";
+    error.error_type = last_msg_.data;
+    error2.error_type = last_msg2_.data;
     errors.push_back(error);
     errors.push_back(error2);
     state.errors = errors;
@@ -50,33 +50,28 @@ std::vector<SubscriptionFields> TestPlugin::generateSubscriptionFields()
 {
     // Example subscription request
     std::vector<SubscriptionFields> subscriptions;
+    subscriptions.reserve(2);
 
-    subscriptions.push_back(SubscriptionFields("test_topic", "std_msgs/msg/String",
+    subscriptions.emplace_back(SubscriptionFields("test_topic", "std_msgs/msg/String",
         std::bind(&TestPlugin::testSubscriptionCb, this, std::placeholders::_1)));
-    subscriptions.push_back(SubscriptionFields("test_topic", "std_msgs/msg/String",
+    subscriptions.emplace_back(SubscriptionFields("test_topic", "std_msgs/msg/String",
         std::bind(&TestPlugin::testSubscriptionCb2, this, std::placeholders::_1)));
     return subscriptions;
 }
 
-void TestPlugin::testSubscriptionCb(std::shared_ptr<rclcpp::SerializedMessage> msg)
+void TestPlugin::testSubscriptionCb(SerializedMsgPtr msg)
 {
-    auto typed_msg = std::make_shared<std_msgs::msg::String>();
-	rclcpp::SerializedMessage ser_msg(*msg);
-	rclcpp::Serialization<std_msgs::msg::String> ser;
-	ser.deserialize_message(&ser_msg, typed_msg.get());
-    std::cout << "Received message: " << typed_msg->data << std::endl;
+    last_msg_ = deserializeMessage<std_msgs::msg::String>(msg);
+    std::cout << "Received message: " << last_msg_.data << std::endl;
 }
 
-void TestPlugin::testSubscriptionCb2(std::shared_ptr<rclcpp::SerializedMessage> msg)
+void TestPlugin::testSubscriptionCb2(SerializedMsgPtr msg)
 {
-	auto typed_msg = std::make_shared<std_msgs::msg::String>();
-	rclcpp::SerializedMessage ser_msg(*msg);
-	rclcpp::Serialization<std_msgs::msg::String> ser;
-	ser.deserialize_message(&ser_msg, typed_msg.get());
-    std::cout << "Received message in callback 2: " << typed_msg->data << std::endl;
+    last_msg2_ = deserializeMessage<std_msgs::msg::String>(msg);
+    std::cout << "Received message in callback 2: " << last_msg2_.data << std::endl;
 }
 
 } // namespace connector_plugins
 
 #include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(connector_plugins::TestPlugin, connector_plugins::GenericPlugin)
+PLUGINLIB_EXPORT_CLASS(connector_plugins::TestPlugin, connector_plugins::GenericPlugin<vda5050_msgs::msg::State>)

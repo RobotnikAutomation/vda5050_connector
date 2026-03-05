@@ -12,6 +12,8 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(vda5050_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(vda5050_connector REQUIRED)
@@ -31,6 +33,8 @@ ament_target_dependencies(${PROJECT_NAME}
   vda5050_connector
   vda5050_msgs
   std_msgs
+  nav_msgs
+  geometry_msgs
 )
 
 target_include_directories(vda5050_connector_plugins PUBLIC

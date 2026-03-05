@@ -27,56 +27,47 @@
 // FOR ANY DAMAGES ARISING FROM THE USE OF THE SOFTWARE OR ITS INTEGRATION IN A
 // THIRD-PARTY SYSTEM.
 
-#include "vda5050_connector/subscription_manager.hpp"
+#pragma once
+#include "boost/date_time/posix_time/posix_time.hpp"
+#include <rclcpp/rclcpp.hpp>
 
-SubscriptionManager::SubscriptionManager(rclcpp::Node::SharedPtr node)
-: node_(node)
+template<typename T>
+class VDA5050Publisher
 {
-}
+public:
+    VDA5050Publisher(rclcpp::Node::SharedPtr node, const std::string& version, const std::string& manufacturer, const std::string& serial_number, const std::string& topic_name)
+    : node_(node)
+    , version_(version)
+    , manufacturer_(manufacturer)
+    , serial_number_(serial_number)
+    , header_id_(0)
+    , publisher_(node_.lock()->create_publisher<T>(topic_name, rclcpp::QoS(10)))
+    {
+    }
 
-SubscriptionManager::SubscriptionManager()
-: node_()
-{
-}
+    ~VDA5050Publisher() = default;
 
-void SubscriptionManager::init(rclcpp::Node::SharedPtr node)
-{
-	if (node_.expired())
-	{
-		node_ = node;
-	}
-}
+    void publish(T msg)
+    {
+        // Publish the message using the ROS2 publisher
+        msg.header_id = header_id_++;
+        msg.timestamp = GetISOCurrentTimestamp();
+        msg.version = version_;
+        msg.manufacturer = manufacturer_;
+        msg.serial_number = serial_number_;
+        publisher_->publish(msg);
+    }
 
-void SubscriptionManager::registerSubscription(SubscriptionFields fields)
-{
-	auto callback = fields.callback;
-	std::string topic_name = fields.topic_name;
-	std::string topic_type = fields.topic_type;
-	auto wrapper = [callback](std::shared_ptr<void> msg) {
-		callback(std::static_pointer_cast<rclcpp::SerializedMessage>(msg));
-	};
+private:
+    std::string GetISOCurrentTimestamp()
+    {
+        return "";
+    }
 
-	auto it = topic_callbacks_.find(topic_name);
-	if (it != topic_callbacks_.end())
-	{
-		it->second.push_back(wrapper);
-	}
-	else
-	{
-		topic_callbacks_[topic_name] = {wrapper};
-		auto subscription = node_.lock()->create_generic_subscription(
-			topic_name,
-			topic_type,
-			rclcpp::QoS(10),
-			[this, topic_name](const std::shared_ptr<rclcpp::SerializedMessage> msg)
-			{
-				for (auto &cb : topic_callbacks_[topic_name])
-				{
-					cb(msg);
-				}
-			}
-		);
-
-		subscriptions_.push_back(subscription);
-	}
-}
+    rclcpp::Node::WeakPtr node_;
+    std::string version_;
+    std::string manufacturer_;
+    std::string serial_number_;
+    std::shared_ptr<rclcpp::Publisher<T>> publisher_;
+    int32_t header_id_;
+};

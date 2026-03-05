@@ -32,15 +32,19 @@
 #include <vda5050_connector/subscription_manager.hpp>
 #include <rclcpp/generic_subscription.hpp>
 #include <rclcpp/serialized_message.hpp>
-#include <vda5050_msgs/msg/state.hpp>
 
 namespace connector_plugins
 {
+template<typename T>
 class GenericPlugin
 {
 public:
+    using SerializedMsg = rclcpp::SerializedMessage;
+    using SerializedMsgPtr = std::shared_ptr<rclcpp::SerializedMessage>;
     virtual void init() = 0;
-    virtual void update(vda5050_msgs::msg::State& state) = 0;
+    
+    virtual void update(T& msg) = 0;
+
     std::vector<SubscriptionFields> getSubscriptionRequest()
     {
         std::vector<SubscriptionFields> subscriptions = generateSubscriptionFields();
@@ -51,6 +55,16 @@ protected:
     virtual std::vector<SubscriptionFields> generateSubscriptionFields()
     {
         return std::vector<SubscriptionFields>();
+    }
+
+    template<typename MsgType>
+    MsgType deserializeMessage(const SerializedMsgPtr& msg)
+    {
+        auto typed_msg = MsgType();
+        SerializedMsg ser_msg(*msg);
+        rclcpp::Serialization<MsgType> ser;
+        ser.deserialize_message(&ser_msg, &typed_msg);
+        return typed_msg;
     }
 };
     

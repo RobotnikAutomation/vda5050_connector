@@ -27,30 +27,44 @@
 // FOR ANY DAMAGES ARISING FROM THE USE OF THE SOFTWARE OR ITS INTEGRATION IN A
 // THIRD-PARTY SYSTEM.
 
-#pragma once
-#include <vda5050_connector/generic_plugin.hpp>
-#include <rclcpp/rclcpp.hpp>
-#include <std_msgs/msg/string.hpp>
-#include <vda5050_msgs/msg/error.hpp>
-#include <vda5050_msgs/msg/state.hpp>
+#include "vda5050_connector/visualization_plugin.hpp"
 
 namespace connector_plugins
 {
-class TestPlugin : public GenericPlugin<vda5050_msgs::msg::State>
+void VisualizationPlugin::init()
 {
-    using State = vda5050_msgs::msg::State;
-    public:
-        TestPlugin() = default;
-        ~TestPlugin() = default;
-        void init() override;
-        void update(State& msg) override;
+}
 
-    private:
-        std::vector<SubscriptionFields> generateSubscriptionFields() override;
-        void testSubscriptionCb(SerializedMsgPtr msg);
-        void testSubscriptionCb2(SerializedMsgPtr msg);
-        std_msgs::msg::String last_msg_;
-        std_msgs::msg::String last_msg2_;
-};
-    
+std::vector<SubscriptionFields> VisualizationPlugin::generateSubscriptionFields()
+{
+    std::vector<SubscriptionFields> subscriptions;
+    subscriptions.reserve(2);
+
+    subscriptions.emplace_back("/robot/robotnik_base_control/odom",
+        "nav_msgs/msg/Odometry", std::bind(&VisualizationPlugin::odomCallback, this, std::placeholders::_1));
+    subscriptions.emplace_back("/robot/amcl/pose",
+        "geometry_msgs/msg/PoseWithCovarianceStamped", std::bind(&VisualizationPlugin::amclPoseCallback, this, std::placeholders::_1));
+    return subscriptions;
+}
+
+void VisualizationPlugin::odomCallback(SerializedMsgPtr msg)
+{
+    last_odometry_ = deserializeMessage<nav_msgs::msg::Odometry>(msg);
+}
+
+void VisualizationPlugin::amclPoseCallback(SerializedMsgPtr msg)
+{
+    last_amcl_pose_ = deserializeMessage<geometry_msgs::msg::PoseWithCovarianceStamped>(msg);
+}
+
+void VisualizationPlugin::update(Visualization& msg)
+{
+    msg.agv_position.x = last_amcl_pose_.pose.pose.position.x;
+    msg.agv_position.y = last_amcl_pose_.pose.pose.position.y;
+    msg.agv_position.theta = std::atan2(last_amcl_pose_.pose.pose.orientation.z, last_amcl_pose_.pose.pose.orientation.w) * 2.0;
+    msg.velocity.vx = last_odometry_.twist.twist.linear.x;
+    msg.velocity.vy = last_odometry_.twist.twist.linear.y;
+    msg.velocity.omega = last_odometry_.twist.twist.angular.z;
+}
+
 } // namespace connector_plugins
